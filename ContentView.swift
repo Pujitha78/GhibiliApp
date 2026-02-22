@@ -21,17 +21,17 @@ struct ContentView: View {
                                 favoritesViewModel: favoritesViewModel)
             }
             Tab("Settings", systemImage: "gear"){
-                
+                SettingsScreen()
             }
             Tab(role: .search){
-                
+                SearchScreen(favoritesViewModel: favoritesViewModel)
             }
         }
         .task {
             favoritesViewModel.load()
             await filmsViewModel.fetch()
         }
-//        .setAppearanceTheme()
+        .setAppearanceTheme()
     }
 }
 

@@ -37,6 +37,14 @@ struct GhibiliAPIService: GhibliServices {
         return try await fetch(from: URLString, type: Person.self)
     }
     
+    func searchFilm(for searchTerm: String) async throws -> [Film] {
+        let allFilms = try await fetchFilms() //dont have a search endpoint otherwise would do this here
+        
+        return allFilms.filter { film in
+            film.title.localizedStandardContains(searchTerm)
+        }
+    }
+    
 //    func fetchFilms() async throws -> [Films] {
 //        guard let url = URL(string: "https://ghibliapi.vercel.app/films") else {
 //            throw APIError.invalidURL
