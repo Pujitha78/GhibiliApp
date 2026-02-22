@@ -8,53 +8,47 @@
 import Foundation
 import Observation
 
-enum APIError: LocalizedError {
-    case invalidURL
-    case invalidResponse
-    case decoding(Error)
-    case networkError(Error)
-}
 
 @Observable
 class FilmsViewModel {
-    var films: [Films] = []
+    var films: [Film] = []
+    var state: LoadingState<[Film]> = .idle
     
-    enum State: Equatable {
-        case idle
-        case loading
-        case loaded([Films])
-        case error(String)
+    //Dependency injection
+    private let service: GhibliServices
+    init(service: GhibliServices = GhibiliAPIService()) {
+        self.service = service
     }
-    
-    var state: State = .idle
     
     func fetch() async {
-        guard state == .idle else { return }
+        guard !state.isLoading || state.error != nil else { return }
+        
         state = .loading
+        
         do {
-            let films = try await fetchFilms()
+            let films = try await service.fetchFilms()
             self.state = .loaded(films)
+        } catch let error as APIError {
+            self.state = .error(error.errorDescription ?? "unknown error")
         } catch {
-            self.state = .error(error.localizedDescription)
+            self.state = .error("unknown error")
         }
     }
     
-    private func fetchFilms() async throws -> [Films]{
-        guard let url = URL(string: "https://ghibliapi.vercel.app/films") else {
-            throw APIError.invalidURL
-        }
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                throw APIError.invalidResponse
-            }
-            return try JSONDecoder().decode([Films].self, from: data)
-        } catch let error as DecodingError{
-            throw APIError.decoding(error)
-        } catch let error as URLError{
-            throw APIError.networkError(error)
-        }
+//    func fetch() async {
+//        guard state == .idle else { return }
+//        state = .loading
+//        do {
+//            let films = try await service.fetchFilms()
+//            self.state = .loaded(films)
+//        } catch {
+//            self.state = .error(error.localizedDescription)
+//        }
+//    }
+
+    static var example: FilmsViewModel {
+        let vm = FilmsViewModel(service: MockGhibliAPIService())
+        vm.state = .loaded([Film.example, Film.exampleFavorite])
+        return vm
     }
 }

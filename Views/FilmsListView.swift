@@ -7,32 +7,62 @@
 import SwiftUI
 
 struct FilmsListView: View {
-    @State private var viewModel = FilmsViewModel()
+    var films: [Film] = []
+    let favoritesViewModel: FavoritesViewModel
+
     var body: some View {
-        NavigationStack {
-            switch viewModel.state {
-            case .idle:
-                Text("No films yet")
-            case .loading:
-                ProgressView{
-                    Text("Loading....")
-                }
-            case .loaded(let films):
-                List(films) {
-                    Text($0.title)
-                }
-            case .error(let error):
-                Text(error)
-                    .foregroundStyle(.pink)
+        List(films) { film in
+            NavigationLink(value: film) {
+                FilmRow(film: film,
+                        favoritesViewModel: favoritesViewModel)
             }
         }
-        .task {
-            await viewModel.fetch()
+        .navigationDestination(for: Film.self) { film in FilmDetailsView(film: film,
+                            favoritesViewModel: favoritesViewModel)
         }
-        
+    }
+}
+
+private struct FilmRow: View {
+    var film: Film
+    let favoritesViewModel: FavoritesViewModel
+    
+    var body: some View {
+        HStack(alignment: .top) {
+            FilmImageView(urlPath: film.image)
+                .frame(width: 100, height: 150)
+            VStack(alignment: .leading) {
+                HStack {
+                    Text(film.title)
+                        .font(.headline)
+                    Spacer()
+                    
+                    FavoriteButton(filmID: film.id,
+                                   favoritesViewModel: favoritesViewModel)
+                    .buttonStyle(.plain)
+                    .controlSize(.large)
+                }
+                .padding(.bottom, 5)
+                
+                Text("Directed by \(film.director)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Text("Released: \(film.releaseYear)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.top)
+        }
     }
 }
 
 #Preview {
-    FilmsListView()
+    //@State @Previewable var filmsViewModel = FilmsViewModel(service: MockGhibliService())
+    @State @Previewable var favorites = FavoritesViewModel(service: MockFavoriteStorage())
+    NavigationStack {
+        FilmsListView(films: [Film.example], favoritesViewModel: FavoritesViewModel.example)
+    }
+    .task {
+        favorites.load()
+    }
 }

@@ -8,14 +8,30 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State var filmsViewModel = FilmsViewModel()
+    @State var favoritesViewModel = FavoritesViewModel()
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            Tab("Movies", systemImage: "movieclapper"){
+                FilmScreen(filmsViewModel: filmsViewModel,
+                           favoritesViewModel: favoritesViewModel)
+            }
+            Tab("Favorites", systemImage: "heart"){
+                FavoritesScreen(filmsViewModel: filmsViewModel,
+                                favoritesViewModel: favoritesViewModel)
+            }
+            Tab("Settings", systemImage: "gear"){
+                
+            }
+            Tab(role: .search){
+                
+            }
         }
-        .padding()
+        .task {
+            favoritesViewModel.load()
+            await filmsViewModel.fetch()
+        }
+//        .setAppearanceTheme()
     }
 }
 
